@@ -40,6 +40,7 @@ public class Volley {
      */
     public static RequestQueue newRequestQueue(Context context) {
         File cacheDir = new File(context.getCacheDir(), DEFAULT_CACHE_DIR);
+        cacheDir.mkdirs();
 
         String userAgent = "volley/0";
         try {
