@@ -74,7 +74,7 @@ public class NetworkImageView extends ImageView {
         mUrl = url;
         mImageLoader = imageLoader;
         // The URL has potentially changed. See if we need to load it.
-        loadImageIfNecessary();
+        loadImageIfNecessary(false);
     }
 
     /**
@@ -95,8 +95,9 @@ public class NetworkImageView extends ImageView {
 
     /**
      * Loads the image for the view if it isn't already loaded.
+     * @param isInLayoutPass True if this function was invoked from a layout pass, false otherwise.
      */
-    private void loadImageIfNecessary() {
+    private void loadImageIfNecessary(boolean isInLayoutPass) {
         int width = getWidth();
         int height = getHeight();
 
@@ -131,7 +132,8 @@ public class NetworkImageView extends ImageView {
         // The pre-existing content of this view didn't match the current URL. Load the new image
         // from the network.
         ImageContainer newContainer = mImageLoader.get(mUrl,
-                ImageLoader.getImageListener(this, mDefaultImageId, mErrorImageId));
+                ImageLoader.getImageListener(this, mDefaultImageId, 
+                        mErrorImageId, isInLayoutPass));
 
         // update the ImageContainer to be the new bitmap container.
         mImageContainer = newContainer;
@@ -140,7 +142,7 @@ public class NetworkImageView extends ImageView {
     @Override
     protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
         super.onLayout(changed, left, top, right, bottom);
-        loadImageIfNecessary();
+        loadImageIfNecessary(true);
     }
 
     @Override

@@ -94,10 +94,15 @@ public class ImageLoader {
      * @param imageView The imageView that the listener is associated with.
      * @param defaultImageResId Default image resource ID to use, or 0 if it doesn't exist.
      * @param errorImageResId Error image resource ID to use, or 0 if it doesn't exist.
+     * @param isInLayoutPass True if this listener will be used to load an image inside
+     * a layout pass.
      */
     public static ImageListener getImageListener(final ImageView view,
-            final int defaultImageResId, final int errorImageResId) {
+            final int defaultImageResId, final int errorImageResId, 
+            final boolean isInLayoutPass) {
         return new ImageListener() {
+            /** Handler to the main thread used for delivering in-layout-pass responses */
+            Handler mMainHandler = new Handler(Looper.getMainLooper());
             @Override
             public void onErrorResponse(VolleyError error) {
                 if (errorImageResId != 0) {
@@ -106,7 +111,20 @@ public class ImageLoader {
             }
 
             @Override
-            public void onResponse(ImageContainer response, boolean isImmediate) {
+            public void onResponse(final ImageContainer response, boolean isImmediate) {
+                // If this was an immediate response that was delivered inside of a layout pass
+                // do not set the image immediately as it will trigger a requestLayout inside
+                // of a layout. Instead, defer setting the image by posting back to the
+                // main thread.
+                if (isImmediate && isInLayoutPass) {
+                    mMainHandler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            onResponse(response, false);
+                        }
+                    });
+                    return;
+                }
                 if (response.getBitmap() != null) {
                     view.setImageBitmap(response.getBitmap());
                 } else if (defaultImageResId != 0) {
