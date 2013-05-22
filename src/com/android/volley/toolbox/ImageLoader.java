@@ -157,6 +157,13 @@ public class ImageLoader {
         return get(requestUrl, listener, 0, 0);
     }
 
+    public boolean isCached(String requestUrl, int maxWidth, int maxHeight) {
+        throwIfNotOnMainThread();
+
+        final String cacheKey = getCacheKey(requestUrl, maxWidth, maxHeight);
+        return mCache.getBitmap(cacheKey) != null;
+    }
+
     /**
      * Issues a bitmap request with the given URL if that image is not available
      * in the cache, and returns a bitmap container that contains all of the data
