@@ -157,10 +157,17 @@ public class ImageLoader {
         return get(requestUrl, listener, 0, 0);
     }
 
+    /**
+     * Checks if the item is available in the cache.
+     * @param requestUrl The url of the remote image
+     * @param maxWidth The maximum width of the returned image.
+     * @param maxHeight The maximum height of the returned image.
+     * @return True if the item exists in cache, false otherwise.
+     */
     public boolean isCached(String requestUrl, int maxWidth, int maxHeight) {
         throwIfNotOnMainThread();
 
-        final String cacheKey = getCacheKey(requestUrl, maxWidth, maxHeight);
+        String cacheKey = getCacheKey(requestUrl, maxWidth, maxHeight);
         return mCache.getBitmap(cacheKey) != null;
     }
 
