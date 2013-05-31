@@ -24,6 +24,7 @@ import android.os.Build;
 
 import com.android.volley.Network;
 import com.android.volley.RequestQueue;
+import com.android.volley.VolleyLog;
 
 import java.io.File;
 
@@ -65,6 +66,8 @@ public class Volley {
 
         RequestQueue queue = new RequestQueue(new DiskBasedCache(cacheDir), network);
         queue.start();
+
+        VolleyLog.init(context);
 
         return queue;
     }
