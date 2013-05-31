@@ -16,6 +16,7 @@
 
 package com.android.volley;
 
+import android.content.Context;
 import android.os.SystemClock;
 import android.util.Log;
 
@@ -27,7 +28,29 @@ import java.util.Locale;
 public class VolleyLog {
     public static String TAG = "Volley";
 
-    public static final boolean DEBUG = Log.isLoggable(TAG, Log.VERBOSE);
+    public static boolean DEBUG = Log.isLoggable(TAG, Log.VERBOSE);
+
+    /**
+     * Customize the log tag for your application, so that other apps
+     * using Volley don't mix their logs with yours.
+     * <br />
+     * If your package name is {@code com.example.foo}, the new log tag
+     * be {@code Volley-com.example.foo}, and these tags are shown with
+     * {@code adb shell setprop log.tag.Volley-com.example.foo VERBOSE}
+     * <br />
+     * Due to restrictions on the length of system properties, the package
+     * name may be truncated to a maximum of 16 characters.
+     */
+    public static void init(Context context) {
+        // Android won't allow properties >= 32 characters long, so trim the
+        // package name to make sure that setprop can still be used.
+        String newTag = ("Volley-" + context.getPackageName()).substring(0, 23);
+        d("Changing log tag to %s", newTag);
+        TAG = newTag;
+
+        // Reinitialize the DEBUG "constant"
+        DEBUG = Log.isLoggable(TAG, Log.VERBOSE);
+    }
 
     public static void v(String format, Object... args) {
         if (DEBUG) {
