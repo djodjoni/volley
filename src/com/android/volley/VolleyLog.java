@@ -16,6 +16,7 @@
 
 package com.android.volley;
 
+import android.content.Context;
 import android.os.SystemClock;
 import android.util.Log;
 
@@ -28,6 +29,18 @@ public class VolleyLog {
     public static String TAG = "Volley";
 
     public static final boolean DEBUG = Log.isLoggable(TAG, Log.VERBOSE);
+
+    /**
+     * Customize the log tag for your application, so that other apps
+     * using Volley don't mix their logs with yours.
+     * <br />
+     * If your package name is {@code com.example.foo}, the new log tag
+     * be {@code Volley-com.example.foo}, and these tags are shown with
+     * {@code adb shell setprop log.tag.Volley-com.example.foo VERBOSE}
+     */
+    public static void init(Context context) {
+        TAG = "Volley." + context.getPackageName();
+    }
 
     public static void v(String format, Object... args) {
         if (DEBUG) {
