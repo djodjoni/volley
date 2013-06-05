@@ -42,6 +42,31 @@ public abstract class Request<T> implements Comparable<Request<T>> {
      */
     private static final String DEFAULT_PARAMS_ENCODING = "UTF-8";
 
+    /** Whether or not responses to requests should be cached. */
+    private static boolean sDefaultShouldCache = true;
+
+    /**
+     * Returns the default setting whether requests allow using caches.
+     *
+     * @return the value of the default setting {@code defaultShouldCache}.
+     * @see #shouldCache
+     */
+    public static boolean getDefaultShouldCache() {
+        return sDefaultShouldCache;
+    }
+
+    /**
+     * Sets the default value for the flag indicating whether connections
+     * allow using caches. Existing {@code Request}s are unaffected.
+     *
+     * @param newValue
+     *            the default value of the flag to be used for new connections.
+     * @see #shouldCache
+     */
+    public static void setDefaultShouldCache(boolean newValue) {
+        sDefaultShouldCache = newValue;
+    }
+
     /**
      * Supported request methods.
      */
@@ -75,7 +100,7 @@ public abstract class Request<T> implements Comparable<Request<T>> {
     private RequestQueue mRequestQueue;
 
     /** Whether or not responses to this request should be cached. */
-    private boolean mShouldCache = true;
+    private boolean mShouldCache = sDefaultShouldCache;
 
     /** Whether or not this request has been canceled. */
     private boolean mCanceled = false;
