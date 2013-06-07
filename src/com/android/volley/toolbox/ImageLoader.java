@@ -216,19 +216,7 @@ public class ImageLoader {
 
         // The request is not already in flight. Send the new request to the network and
         // track it.
-        Request<?> newRequest =
-            new ImageRequest(requestUrl, new Listener<Bitmap>() {
-                @Override
-                public void onResponse(Bitmap response) {
-                    onGetImageSuccess(cacheKey, response);
-                }
-            }, maxWidth, maxHeight,
-            Config.RGB_565, new ErrorListener() {
-                @Override
-                public void onErrorResponse(VolleyError error) {
-                    onGetImageError(cacheKey, error);
-                }
-            });
+        Request<?> newRequest = createNewRequest(requestUrl, cacheKey, maxWidth, maxHeight);
 
         mRequestQueue.add(newRequest);
         mInFlightRequests.put(cacheKey,
@@ -236,6 +224,28 @@ public class ImageLoader {
         return imageContainer;
     }
 
+    /**
+     * Creates new Request. 
+     * @param requestUrl The url of the remote image.
+     * @param cacheKey The cache key that is associated with the image request.
+     * @param maxWidth The maximum width of the returned image.
+     * @param maxHeight The maximum height of the returned image.
+     * @return A request object.
+     */
+    protected Request<?> createNewRequest(String requestUrl, final String cacheKey, int maxWidth, int maxHeight) {
+        return new ImageRequest(requestUrl, new Listener<Bitmap>() {
+            @Override
+            public void onResponse(Bitmap response) {
+                onGetImageSuccess(cacheKey, response);
+            }
+        }, maxWidth, maxHeight,
+        Config.RGB_565, new ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                onGetImageError(cacheKey, error);
+            }
+        });
+    }
     /**
      * Sets the amount of time to wait after the first response arrives before delivering all
      * responses. Batching can be disabled entirely by passing in 0.
@@ -250,7 +260,7 @@ public class ImageLoader {
      * @param cacheKey The cache key that is associated with the image request.
      * @param response The bitmap that was returned from the network.
      */
-    private void onGetImageSuccess(String cacheKey, Bitmap response) {
+    protected void onGetImageSuccess(String cacheKey, Bitmap response) {
         // cache the image that was fetched.
         mCache.putBitmap(cacheKey, response);
 
@@ -270,7 +280,7 @@ public class ImageLoader {
      * Handler for when an image failed to load.
      * @param cacheKey The cache key that is associated with the image request.
      */
-    private void onGetImageError(String cacheKey, VolleyError error) {
+    protected void onGetImageError(String cacheKey, VolleyError error) {
         // Notify the requesters that something failed via a null result.
         // Remove this request from the list of in-flight requests.
         BatchedImageRequest request = mInFlightRequests.remove(cacheKey);
