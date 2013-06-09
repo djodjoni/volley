@@ -168,7 +168,7 @@ public class ImageLoader {
      * @param defaultImage Optional default image to return until the actual image is loaded.
      */
     public ImageContainer get(String requestUrl, final ImageListener listener) {
-        return get(requestUrl, listener, 0, 0);
+        return get(requestUrl, listener, null, 0, 0);
     }
 
     /**
@@ -184,7 +184,25 @@ public class ImageLoader {
      *     the currently available image (default if remote is not loaded).
      */
     public ImageContainer get(String requestUrl, ImageListener imageListener,
-            int maxWidth, int maxHeight) {
+                              int maxWidth, int maxHeight) {
+        return get(requestUrl, imageListener, null, maxWidth, maxHeight);
+    }
+
+    /**
+     * Issues a bitmap request with the given URL if that image is not available
+     * in the cache, and returns a bitmap container that contains all of the data
+     * relating to the request (as well as the default image if the requested
+     * image is not available).
+     * @param requestUrl The url of the remote image
+     * @param imageListener The listener to call when the remote image is loaded
+     * @param tag The object to tag the request with
+     * @param maxWidth The maximum width of the returned image.
+     * @param maxHeight The maximum height of the returned image.
+     * @return A container object that contains all of the properties of the request, as well as
+     *     the currently available image (default if remote is not loaded).
+     */
+    public ImageContainer get(String requestUrl, ImageListener imageListener,
+            Object tag, int maxWidth, int maxHeight) {
         // only fulfill requests that were initiated from the main thread.
         throwIfNotOnMainThread();
 
@@ -229,6 +247,7 @@ public class ImageLoader {
                     onGetImageError(cacheKey, error);
                 }
             });
+        newRequest.setTag(tag);
 
         mRequestQueue.add(newRequest);
         mInFlightRequests.put(cacheKey,
