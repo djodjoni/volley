@@ -104,8 +104,9 @@ public class NetworkImageView extends ImageView {
         int width = getWidth();
         int height = getHeight();
 
-        boolean isFullyWrapContent = getLayoutParams().height == LayoutParams.WRAP_CONTENT
-                && getLayoutParams().width == LayoutParams.WRAP_CONTENT;
+        android.view.ViewGroup.LayoutParams layoutParams = getLayoutParams();
+        boolean isFullyWrapContent = layoutParams != null && layoutParams.height == LayoutParams.WRAP_CONTENT
+                && layoutParams.width == LayoutParams.WRAP_CONTENT;
         // if the view's bounds aren't known yet, and this is not a wrap-content/wrap-content
         // view, hold off on loading the image.
         if (width == 0 && height == 0 && !isFullyWrapContent) {
