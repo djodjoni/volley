@@ -121,6 +121,8 @@ public class BasicNetwork implements Network {
                 NetworkResponse networkResponse = null;
                 if (httpResponse != null) {
                     statusCode = httpResponse.getStatusLine().getStatusCode();
+                } else if(request.getCacheEntry().data != null) {
+                    return new NetworkResponse(HttpStatus.SC_NOT_MODIFIED, request.getCacheEntry().data , responseHeaders, true);
                 } else {
                     throw new NoConnectionError(e);
                 }
