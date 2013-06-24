@@ -23,7 +23,9 @@ import org.apache.http.impl.cookie.DateParseException;
 import org.apache.http.impl.cookie.DateUtils;
 import org.apache.http.protocol.HTTP;
 
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 
 /**
  * Utility methods for parsing HTTP headers.
@@ -39,8 +41,11 @@ public class HttpHeaderParser {
     public static Cache.Entry parseCacheHeaders(NetworkResponse response) {
         long now = System.currentTimeMillis();
 
-        Map<String, String> headers = response.headers;
-
+        // The http spec says :
+        // Each header field consists of a name followed by a colon (":") and the field value. Field names are case-insensitive.
+        // So since volley does not know the case the server has chosen to use, it's best to ignore the case.
+        Map<String, String> headers = createHeadersWithLoweredCaseKeys (response.headers);
+        
         long serverDate = 0;
         long serverExpires = 0;
         long softExpire = 0;
@@ -50,12 +55,15 @@ public class HttpHeaderParser {
         String serverEtag = null;
         String headerValue;
 
-        headerValue = headers.get("Date");
+        
+        
+
+        headerValue = headers.get("date");
         if (headerValue != null) {
             serverDate = parseDateAsEpoch(headerValue);
         }
 
-        headerValue = headers.get("Cache-Control");
+        headerValue = headers.get("cache-control"); 
         if (headerValue != null) {
             hasCacheControl = true;
             String[] tokens = headerValue.split(",");
@@ -74,12 +82,12 @@ public class HttpHeaderParser {
             }
         }
 
-        headerValue = headers.get("Expires");
+        headerValue = headers.get("expires");
         if (headerValue != null) {
             serverExpires = parseDateAsEpoch(headerValue);
         }
 
-        serverEtag = headers.get("ETag");
+        serverEtag = headers.get("etag"); 
 
         // Cache-Control takes precedence over an Expires header, even if both exist and Expires
         // is more restrictive.
@@ -134,4 +142,20 @@ public class HttpHeaderParser {
 
         return HTTP.DEFAULT_CONTENT_CHARSET;
     }
+    
+    
+    /**
+     * creates a new map where keys in headers-map has been lowercased
+     */
+    public static Map<String,String> createHeadersWithLoweredCaseKeys(Map<String, String> headers){
+    	
+    	Map<String, String> caseIgnoringHeaders = new HashMap<String, String>();
+    	
+    	for(Entry<String,String> entry : headers.entrySet()){
+    		String entryKey = entry.getKey().toLowerCase();
+    		caseIgnoringHeaders.put(entryKey, entry.getValue());
+    	}
+    	return caseIgnoringHeaders;
+    }
+
 }
