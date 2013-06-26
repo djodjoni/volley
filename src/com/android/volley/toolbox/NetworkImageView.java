@@ -18,8 +18,8 @@ package com.android.volley.toolbox;
 import android.content.Context;
 import android.text.TextUtils;
 import android.util.AttributeSet;
+import android.view.ViewGroup;
 import android.widget.ImageView;
-import android.widget.LinearLayout.LayoutParams;
 
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.ImageLoader.ImageContainer;
@@ -104,8 +104,9 @@ public class NetworkImageView extends ImageView {
         int width = getWidth();
         int height = getHeight();
 
-        boolean isFullyWrapContent = getLayoutParams().height == LayoutParams.WRAP_CONTENT
-                && getLayoutParams().width == LayoutParams.WRAP_CONTENT;
+        final ViewGroup.LayoutParams lp = getLayoutParams();
+        final int wrapContent = ViewGroup.LayoutParams.WRAP_CONTENT;
+        boolean isFullyWrapContent = lp != null && lp.height == wrapContent && lp.width == wrapContent;
         // if the view's bounds aren't known yet, and this is not a wrap-content/wrap-content
         // view, hold off on loading the image.
         if (width == 0 && height == 0 && !isFullyWrapContent) {
