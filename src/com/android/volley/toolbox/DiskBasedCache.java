@@ -29,17 +29,27 @@ import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 /**
  * Cache implementation that caches files directly onto the hard disk in the specified
  * directory. The default disk usage size is 5MB, but is configurable.
  */
 public class DiskBasedCache implements Cache {
+
+    /** Number of threads to use when loading cache from disk */
+    private final int CACHE_LOAD_THREADS = 4;
 
     /** Map of the Key, CacheHeader pairs */
     private final Map<String, CacheHeader> mEntries =
@@ -148,24 +158,60 @@ public class DiskBasedCache implements Cache {
         if (files == null) {
             return;
         }
+        ExecutorService executor = Executors.newFixedThreadPool(CACHE_LOAD_THREADS);
+        List<Future<CacheHeader>> list = new ArrayList<Future<CacheHeader>>();
+
         for (File file : files) {
+            Callable<CacheHeader> worker = new HeaderParserCallable(file);
+            Future<CacheHeader> submit = executor.submit(worker);
+            list.add(submit);
+        }
+
+        for (Future<CacheHeader> future : list) {
+            try {
+                CacheHeader entry = future.get();
+                if (entry != null) {
+                    putEntry(entry.key, entry);
+                }
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (ExecutionException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    /**
+     * A callable that parses CacheHeader and returns a valid cache entry.
+     */
+    public class HeaderParserCallable implements Callable<CacheHeader> {
+        private final File file;
+
+        public HeaderParserCallable(File file) {
+            this.file = file;
+        }
+
+        @Override
+        public CacheHeader call() throws Exception {
             FileInputStream fis = null;
             try {
                 fis = new FileInputStream(file);
                 CacheHeader entry = CacheHeader.readHeader(fis);
                 entry.size = file.length();
-                putEntry(entry.key, entry);
+                return entry;
             } catch (IOException e) {
                 if (file != null) {
-                   file.delete();
+                    file.delete();
                 }
             } finally {
                 try {
                     if (fis != null) {
                         fis.close();
                     }
-                } catch (IOException ignored) { }
+                } catch (IOException ignored) {
+                }
             }
+            return null;
         }
     }
 
