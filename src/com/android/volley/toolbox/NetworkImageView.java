@@ -104,7 +104,8 @@ public class NetworkImageView extends ImageView {
         int width = getWidth();
         int height = getHeight();
 
-        boolean isFullyWrapContent = getLayoutParams() != null
+        boolean hasLayoutParams = getLayoutParams() != null;
+        boolean isFullyWrapContent = hasLayoutParams
                 && getLayoutParams().height == LayoutParams.WRAP_CONTENT
                 && getLayoutParams().width == LayoutParams.WRAP_CONTENT;
         // if the view's bounds aren't known yet, and this is not a wrap-content/wrap-content
@@ -135,6 +136,12 @@ public class NetworkImageView extends ImageView {
                 setImageBitmap(null);
             }
         }
+
+        // calculate the max image width / height to use while ignoring WRAP_CONTENT dimens.
+        int imageMaxWidth = hasLayoutParams
+                && getLayoutParams().width == LayoutParams.WRAP_CONTENT ? 0 : width;
+        int imageMaxHeight = hasLayoutParams
+                && getLayoutParams().height == LayoutParams.WRAP_CONTENT ? 0 : height;
 
         // The pre-existing content of this view didn't match the current URL. Load the new image
         // from the network.
@@ -169,7 +176,7 @@ public class NetworkImageView extends ImageView {
                             setImageResource(mDefaultImageId);
                         }
                     }
-                });
+                }, imageMaxWidth, imageMaxHeight);
 
         // update the ImageContainer to be the new bitmap container.
         mImageContainer = newContainer;
