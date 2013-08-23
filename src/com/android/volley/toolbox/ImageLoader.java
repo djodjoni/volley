@@ -185,6 +185,26 @@ public class ImageLoader {
      */
     public ImageContainer get(String requestUrl, ImageListener imageListener,
             int maxWidth, int maxHeight) {
+        return get(requestUrl, imageListener, 0, 0, null);
+    }
+
+    /**
+     * Issues a bitmap request with the given URL if that image is not available
+     * in the cache, and returns a bitmap container that contains all of the data
+     * relating to the request (as well as the default image if the requested
+     * image is not available).
+     * @param requestUrl The url of the remote image
+     * @param imageListener The listener to call when the remote image is loaded
+     * @param maxWidth The maximum width of the returned image.
+     * @param maxHeight The maximum height of the returned image.
+     * @param scaleType Scaling method to use with maxWidth and maxHeight.
+     * 		  (both CENTER_INSIDE and CENTER_CROP are supported).
+     * @return A container object that contains all of the properties of the
+     *     request, as well as the currently available image (default if remote
+     *     is not loaded).
+     */
+    public ImageContainer get(String requestUrl, ImageListener imageListener,
+            int maxWidth, int maxHeight, ImageView.ScaleType scaleType) {
         // only fulfill requests that were initiated from the main thread.
         throwIfNotOnMainThread();
 
@@ -222,8 +242,8 @@ public class ImageLoader {
                 public void onResponse(Bitmap response) {
                     onGetImageSuccess(cacheKey, response);
                 }
-            }, maxWidth, maxHeight,
-            Config.RGB_565, new ErrorListener() {
+            }, maxWidth, maxHeight, scaleType, Config.RGB_565,
+            new ErrorListener() {
                 @Override
                 public void onErrorResponse(VolleyError error) {
                     onGetImageError(cacheKey, error);
