@@ -25,6 +25,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 import junit.framework.TestCase;
@@ -162,7 +163,10 @@ public class HttpHeaderParserTest extends TestCase {
     }
 
     private static String rfc1123Date(long millis) {
-        DateFormat df = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz");
+        // Locale not being specified, return value of `df.format` may not match RFC 1123.
+        // For example if Japanese locale is used, day of week ("EEE" format) representing
+        // Wednesday will be not "Wed" but "水" (U+6C34).
+        DateFormat df = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz", Locale.US);
         return df.format(new Date(millis));
     }
 
