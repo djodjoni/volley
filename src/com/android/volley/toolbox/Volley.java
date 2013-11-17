@@ -16,16 +16,18 @@
 
 package com.android.volley.toolbox;
 
+import java.io.File;
+
 import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.net.http.AndroidHttpClient;
 import android.os.Build;
 
+import com.android.volley.Cache;
 import com.android.volley.Network;
 import com.android.volley.RequestQueue;
-
-import java.io.File;
+import com.android.volley.Response;
 
 public class Volley {
 
@@ -33,15 +35,17 @@ public class Volley {
     private static final String DEFAULT_CACHE_DIR = "volley";
 
     /**
-     * Creates a default instance of the worker pool and calls {@link RequestQueue#start()} on it.
-     *
+     * Creates a default instance of the worker pool and calls
+     * {@link RequestQueue#start()} on it.
+     * 
      * @param context A {@link Context} to use for creating the cache dir.
-     * @param stack An {@link HttpStack} to use for the network, or null for default.
+     * @param stack An {@link HttpStack} to use for the network, or null for
+     *        default.
+     * @param cache A {@link Cache} to cache the {@link Response} from a
+     *        {@link Request}, or null for default DiskBasedCache.
      * @return A started {@link RequestQueue} instance.
      */
-    public static RequestQueue newRequestQueue(Context context, HttpStack stack) {
-        File cacheDir = new File(context.getCacheDir(), DEFAULT_CACHE_DIR);
-
+    public static RequestQueue newRequestQueue(Context context, HttpStack stack, Cache cache) {
         String userAgent = "volley/0";
         try {
             String packageName = context.getPackageName();
@@ -62,10 +66,28 @@ public class Volley {
 
         Network network = new BasicNetwork(stack);
 
-        RequestQueue queue = new RequestQueue(new DiskBasedCache(cacheDir), network);
+        if (cache == null) {
+            // Create a new DiskBasedCache with default behaviour
+            // if param cache == null.
+            File cacheDir = new File(context.getCacheDir(), DEFAULT_CACHE_DIR);
+            cache = new DiskBasedCache(cacheDir);
+        }
+
+        RequestQueue queue = new RequestQueue(cache, network);
         queue.start();
 
         return queue;
+    }
+
+    /**
+     * Creates a default instance of the worker pool and calls {@link RequestQueue#start()} on it.
+     *
+     * @param context A {@link Context} to use for creating the cache dir.
+     * @param stack An {@link HttpStack} to use for the network, or null for default.
+     * @return A started {@link RequestQueue} instance.
+     */
+    public static RequestQueue newRequestQueue(Context context, HttpStack stack) {
+        return newRequestQueue(context, null, null);
     }
 
     /**
