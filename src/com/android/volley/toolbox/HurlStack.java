@@ -106,7 +106,12 @@ public class HurlStack implements HttpStack {
         setConnectionParametersForRequest(connection, request);
         // Initialize HttpResponse with data from the HttpURLConnection.
         ProtocolVersion protocolVersion = new ProtocolVersion("HTTP", 1, 1);
-        int responseCode = connection.getResponseCode();
+        int responseCode = -1;
+        try{
+            responseCode = connection.getResponseCode();
+        } catch (IOException e){
+            responseCode = connection.getResponseCode();
+        }
         if (responseCode == -1) {
             // -1 is returned by getResponseCode() if the response code could not be retrieved.
             // Signal to the caller that something was wrong with the connection.
