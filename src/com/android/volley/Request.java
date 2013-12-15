@@ -93,9 +93,16 @@ public abstract class Request<T> implements Comparable<Request<T>> {
     private RetryPolicy mRetryPolicy;
 
     /**
-     * When a request can be retrieved from cache but must be refreshed from
-     * the network, the cache entry will be stored here so that in the event of
-     * a "Not Modified" response, we can be sure it hasn't been evicted from cache.
+     * The cache for this request if it requires another one than the default
+     * cache.
+     */
+    private Cache mCache = null;
+
+    /**
+     * When a request can be retrieved from cache but must be refreshed from the
+     * network, the cache entry will be stored here so that in the event of a
+     * "Not Modified" response, we can be sure it hasn't been evicted from
+     * cache.
      */
     private Cache.Entry mCacheEntry = null;
 
@@ -245,7 +252,27 @@ public abstract class Request<T> implements Comparable<Request<T>> {
     }
 
     /**
-     * Returns the cache key for this request.  By default, this is the URL.
+     * The cache for this request if it requires another one than the default
+     * cache.
+     * 
+     * @return the cache for this request
+     */
+    public Cache getCache() {
+        return mCache;
+    }
+
+    /**
+     * Sets the cache for this request if it requires another one than the
+     * default cache.
+     * 
+     * @param cache the cache for this request
+     */
+    public void setCache(Cache cache) {
+        mCache = cache;
+    }
+
+    /**
+     * Returns the cache key for this request. By default, this is the URL.
      */
     public String getCacheKey() {
         return getUrl();

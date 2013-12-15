@@ -97,8 +97,19 @@ public class CacheDispatcher extends Thread {
                     continue;
                 }
 
+                // A special cache for this request?
+                final Cache requestsCache = request.getCache();
+
                 // Attempt to retrieve this item from cache.
-                Cache.Entry entry = mCache.get(request.getCacheKey());
+                Cache.Entry entry = null;
+                if (requestsCache != null) {
+                    request.addMarker("cache-use-requests-cache");
+                    entry = requestsCache.get(request.getCacheKey());
+                } else {
+                    request.addMarker("cache-use-default-cache");
+                    entry = mCache.get(request.getCacheKey());
+                }
+
                 if (entry == null) {
                     request.addMarker("cache-miss");
                     // Cache miss; send off to the network dispatcher.
