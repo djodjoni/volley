@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+   <declare-styleable name="NetworkImageView">
+
+      <!-- Resource ID of the image to be used as a placeholder until the network image is loaded. -->
+      <attr name="defaultImageId" format="reference" />
+      <!-- Resource ID of the image to be used if the network response fails. -->
+      <attr name="errorImageId" format="reference" />
+   </declare-styleable>
+
+</resources>
