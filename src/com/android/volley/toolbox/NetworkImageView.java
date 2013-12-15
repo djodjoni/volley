@@ -16,11 +16,13 @@
 package com.android.volley.toolbox;
 
 import android.content.Context;
+import android.content.res.TypedArray;
 import android.text.TextUtils;
 import android.util.AttributeSet;
 import android.view.ViewGroup.LayoutParams;
 import android.widget.ImageView;
 
+import com.android.volley.R;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.ImageLoader.ImageContainer;
 import com.android.volley.toolbox.ImageLoader.ImageListener;
@@ -28,6 +30,14 @@ import com.android.volley.toolbox.ImageLoader.ImageListener;
 /**
  * Handles fetching an image from a URL as well as the life-cycle of the
  * associated request.
+ * <p>
+ * <b>XML attributes</b>
+ * <p>
+ * See {@link com.android.volley.R.styleable#NetworkImageView NetworkImageView
+ * Attributes}
+ * 
+ * @attr ref com.android.volley.R.styleable#NetworkImageView_defaultImageId
+ * @attr ref com.android.volley.R.styleable#NetworkImageView_errorImageId
  */
 public class NetworkImageView extends ImageView {
     /** The URL of the network image to load */
@@ -59,6 +69,18 @@ public class NetworkImageView extends ImageView {
 
     public NetworkImageView(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
+
+        final TypedArray a = context.getTheme().obtainStyledAttributes(attrs,
+                R.styleable.NetworkImageView, defStyle, 0);
+
+        try {
+
+            this.mDefaultImageId = a.getResourceId(R.styleable.NetworkImageView_defaultImageId, 0);
+            this.mErrorImageId = a.getResourceId(R.styleable.NetworkImageView_errorImageId, 0);
+
+        } finally {
+            a.recycle();
+        }
     }
 
     /**
