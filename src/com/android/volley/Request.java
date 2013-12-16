@@ -23,6 +23,8 @@ import android.os.Looper;
 import android.os.SystemClock;
 import android.text.TextUtils;
 
+import com.android.volley.Response.ErrorListener;
+import com.android.volley.Response.ErrorWithCachedObjectListener;
 import com.android.volley.VolleyLog.MarkerLog;
 
 import java.io.UnsupportedEncodingException;
@@ -66,7 +68,7 @@ public abstract class Request<T> implements Comparable<Request<T>> {
     private final int mDefaultTrafficStatsTag;
 
     /** Listener interface for errors. */
-    private final Response.ErrorListener mErrorListener;
+    private final Response.IErrorListener mErrorListener;
 
     /** Sequence number of this request, used to enforce FIFO ordering. */
     private Integer mSequence;
@@ -110,7 +112,7 @@ public abstract class Request<T> implements Comparable<Request<T>> {
      *
      * @deprecated Use {@link #Request(int, String, com.android.volley.Response.ErrorListener)}.
      */
-    public Request(String url, Response.ErrorListener listener) {
+    public Request(String url, Response.IErrorListener listener) {
         this(Method.DEPRECATED_GET_OR_POST, url, listener);
     }
 
@@ -120,7 +122,7 @@ public abstract class Request<T> implements Comparable<Request<T>> {
      * delivery of responses is provided by subclasses, who have a better idea of how to deliver
      * an already-parsed response.
      */
-    public Request(int method, String url, Response.ErrorListener listener) {
+    public Request(int method, String url, Response.IErrorListener listener) {
         mMethod = method;
         mUrl = url;
         mErrorListener = listener;
@@ -498,11 +500,24 @@ public abstract class Request<T> implements Comparable<Request<T>> {
     }
 
     /**
+     * Subclasses can overwrite this to perform delivery of the parsed response
+     * to their listeners. The given response is guaranteed to be non-null;
+     * responses that fail to parse are not delivered.
+     * 
+     * @param response The parsed response returned by
+     *            {@link #parseNetworkResponse(NetworkResponse)}
+     * @param cachedResponse <code>true</code> if this response comes from cache
+     */
+    protected void deliverResponse(T response, boolean cachedResponse) {
+        deliverResponse(response);
+    }
+
+    /**
      * Subclasses must implement this to perform delivery of the parsed
      * response to their listeners.  The given response is guaranteed to
      * be non-null; responses that fail to parse are not delivered.
      * @param response The parsed response returned by
-     * {@link #parseNetworkResponse(NetworkResponse)}
+     *            {@link #parseNetworkResponse(NetworkResponse)}
      */
     abstract protected void deliverResponse(T response);
 
@@ -513,8 +528,24 @@ public abstract class Request<T> implements Comparable<Request<T>> {
      * @param error Error details
      */
     public void deliverError(VolleyError error) {
+        if (mErrorListener != null && mErrorListener instanceof ErrorListener) {
+            ((ErrorListener) mErrorListener).onErrorResponse(error);
+        }
+    }
+    
+    /**
+     * Delivers error message to the ErrorListener that the Request was
+     * initialized with.
+     *
+     * @param error Error details
+     */
+    public void deliverError(VolleyError error, Object cachedData) {
         if (mErrorListener != null) {
-            mErrorListener.onErrorResponse(error);
+            if (mErrorListener instanceof ErrorListener) {
+                ((ErrorListener) mErrorListener).onErrorResponse(error);
+            } else if (mErrorListener instanceof ErrorWithCachedObjectListener) {
+                ((ErrorWithCachedObjectListener) mErrorListener).onErrorResponse(error, cachedData);
+            }
         }
     }
 

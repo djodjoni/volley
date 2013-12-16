@@ -118,6 +118,7 @@ public class CacheDispatcher extends Thread {
                 request.addMarker("cache-hit");
                 Response<?> response = request.parseNetworkResponse(
                         new NetworkResponse(entry.data, entry.responseHeaders));
+                response.cachedResponse = true;
                 request.addMarker("cache-hit-parsed");
 
                 if (!entry.refreshNeeded()) {

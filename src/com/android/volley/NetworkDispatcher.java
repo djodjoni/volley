@@ -114,6 +114,7 @@ public class NetworkDispatcher extends Thread {
 
                 // Parse the response here on the worker thread.
                 Response<?> response = request.parseNetworkResponse(networkResponse);
+                response.cachedResponse = networkResponse.notModified;
                 request.addMarker("network-parse-complete");
 
                 // Write to cache if applicable.

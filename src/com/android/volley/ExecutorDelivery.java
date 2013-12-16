@@ -96,9 +96,22 @@ public class ExecutorDelivery implements ResponseDelivery {
 
             // Deliver a normal response or error, depending.
             if (mResponse.isSuccess()) {
-                mRequest.deliverResponse(mResponse.result);
+                mRequest.deliverResponse(mResponse.result, mResponse.cachedResponse);
             } else {
-                mRequest.deliverError(mResponse.error);
+
+                Response<?> cachedResponse = null;
+                Object cachedData = null;
+
+                Cache.Entry cacheEntry = this.mRequest.getCacheEntry();
+                if (cacheEntry != null) {
+                    cachedResponse = this.mRequest.parseNetworkResponse(new NetworkResponse(
+                            cacheEntry.data, cacheEntry.responseHeaders));
+                    if (cachedResponse != null) {
+                        cachedData = cachedResponse.result;
+                    }
+                }
+
+                mRequest.deliverError(mResponse.error, cachedData);
             }
 
             // If this is an intermediate response, add a marker, otherwise we're done

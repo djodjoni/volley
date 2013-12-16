@@ -30,12 +30,29 @@ public class Response<T> {
     }
 
     /** Callback interface for delivering error responses. */
-    public interface ErrorListener {
+    interface IErrorListener {}
+
+    /** Callback interface for delivering error responses. */
+    public interface ErrorListener extends IErrorListener {
         /**
-         * Callback method that an error has been occurred with the
-         * provided error code and optional user-readable message.
+         * Callback method that an error has been occurred with the provided
+         * error code and optional user-readable message.
          */
         public void onErrorResponse(VolleyError error);
+    }
+
+    /**
+     * Callback interface for delivering error responses with cached data if
+     * there is one.
+     */
+    public interface ErrorWithCachedObjectListener extends IErrorListener {
+        /**
+         * Callback method that an error has been occurred with the provided
+         * error code and optional user-readable message.
+         * 
+         * @param cachedData
+         */
+        public void onErrorResponse(VolleyError error, Object cachedData);
     }
 
     /** Returns a successful response containing the parsed result. */
@@ -59,6 +76,9 @@ public class Response<T> {
 
     /** Detailed error information if <code>errorCode != OK</code>. */
     public final VolleyError error;
+
+    /** True if this response comes from cache. */
+    public boolean cachedResponse;
 
     /** True if this response was a soft-expired one and a second one MAY be coming. */
     public boolean intermediate = false;
