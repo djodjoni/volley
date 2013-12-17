@@ -49,6 +49,9 @@ public class NetworkImageView extends ImageView {
     /** Current ImageContainer. (either in-flight or finished) */
     private ImageContainer mImageContainer;
 
+    /** Whether or not NVI is in debug mode. */
+    private boolean mDebug;
+
     public NetworkImageView(Context context) {
         this(context, null);
     }
@@ -94,6 +97,49 @@ public class NetworkImageView extends ImageView {
      */
     public void setErrorImageResId(int errorImage) {
         mErrorImageId = errorImage;
+    }
+
+    /**
+    * Sets the debug mode of this NetworkImageView.
+    * <p/>
+    * If debug mode is activated NVI draws two colored dots in the upper left corner.
+    * <p/>
+    * <i>Left one:</i>
+    * <dl>
+    * <dt>red</dt>
+    * <dd>Image comes from network.</dd>
+    * <dt>yellow</dt>
+    * <dd>Image comes from disk cache.</dd>
+    * <dt>green</dt>
+    * <dd>Image comes from in-memory cache.</dd>
+    * </dl>
+    * <p/>
+    * <i>Right one:</i>
+    * <dl>
+    * <dt>red</dt>
+    * <dd>Image is to small to fit its NVI size. It was not scaled up. Maybe the NVI did it depending on its layout settings.</dd>
+    * <dt>yellow</dt>
+    * <dd>Image was to large for its NVI size and was scaled down.</dd>
+    * <dt>green</dt>
+    * <dd>Image fits its NVI size.</dd>
+    * </dl>
+    * <b>Note:</b> If the image comes from in-memory cache the colors for the right one have a different meaning:
+    * <p/>
+    * <i>Right one:</i>
+    * <dl>
+    * <dt>red</dt>
+    * <dd>Image is to small to fit its NVI size. It was not scaled up. Maybe the NVI did it depending on its layout settings.</dd>
+    * <dt>yellow</dt>
+    * <dd>Not available, the image was resized during the download process.</dd>
+    * <dt>green</dt>
+    * <dd>Width/height or both fits its NVI size.</dd>
+    * </dl>
+    * 
+    * @param debug
+    *           <code>true</code> to activate debug mode otherwise <code>false</code>
+    */
+    public void setDebug(boolean debug) {
+        mDebug = debug;
     }
 
     /**
@@ -184,7 +230,7 @@ public class NetworkImageView extends ImageView {
                         }
 
                         if (response.getBitmap() != null) {
-                            setImageBitmap(response.getBitmap());
+                            setImageBitmap(response.getBitmap(mDebug));
                         } else if (mDefaultImageId != 0) {
                             setImageResource(mDefaultImageId);
                         }

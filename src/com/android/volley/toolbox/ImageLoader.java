@@ -17,17 +17,18 @@ package com.android.volley.toolbox;
 
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.Config;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
 import android.os.Handler;
 import android.os.Looper;
 import android.widget.ImageView;
 import android.widget.ImageView.ScaleType;
 
-import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response.ErrorListener;
 import com.android.volley.Response.Listener;
 import com.android.volley.VolleyError;
-import com.android.volley.toolbox.ImageRequest;
 
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -198,6 +199,13 @@ public class ImageLoader {
         if (cachedBitmap != null) {
             // Return the cached bitmap.
             ImageContainer container = new ImageContainer(cachedBitmap, requestUrl, null, null);
+            container.cacheState = ImageContainer.CACHESTATE_INMEMORY_CACHE;
+            if (cachedBitmap.getWidth() == maxWidth ||
+                    cachedBitmap.getHeight() == maxHeight) {
+                container.scaleState = ImageRequest.SCALESTATE_JUST_RIGHT;
+            } else {
+                container.scaleState = ImageRequest.SCALESTATE_TO_SMALL;
+            }
             imageListener.onResponse(container, true);
             return container;
         }
@@ -219,7 +227,7 @@ public class ImageLoader {
 
         // The request is not already in flight. Send the new request to the network and
         // track it.
-        Request<?> newRequest =
+        ImageRequest newRequest =
                 new ImageRequest(requestUrl, new Listener<Bitmap>() {
                     @Override
                     public void onResponse(Bitmap response) {
@@ -291,6 +299,11 @@ public class ImageLoader {
      * Container object for all of the data surrounding an image request.
      */
     public class ImageContainer {
+
+        private static final int CACHESTATE_NETWORK = 1;
+        private static final int CACHESTATE_DISK_CACH = 2;
+        private static final int CACHESTATE_INMEMORY_CACHE = 3;
+
         /**
          * The most relevant bitmap for the container. If the image was in cache, the
          * Holder to use for the final bitmap (the one that pairs to the requested URL).
@@ -304,6 +317,15 @@ public class ImageLoader {
 
         /** The request URL that was specified */
         private final String mRequestUrl;
+
+        /** The cache state, shows where the image comes from. */
+        private int cacheState;
+
+        /**
+         * The scale state, shows if the image was scaled to fit the ImageView
+         * or not.
+         */
+        private int scaleState;
 
         /**
          * Constructs a BitmapContainer object.
@@ -353,6 +375,76 @@ public class ImageLoader {
         }
 
         /**
+         * Returns the bitmap associated with the request URL if it has been
+         * loaded, null otherwise. Adds debug infos if addDebugInfo is
+         * <code>true</code>.
+         * 
+         * @param addDebugInfo Adds debug infos if it is <code>true</code>.
+         */
+        public Bitmap getBitmap(boolean addDebugInfo) {
+            if (addDebugInfo) {
+                return getBitmapWithDebugInfo();
+            }
+            return mBitmap;
+        }
+
+        /**
+         * Returns the bitmap associated with the request URL if it has been
+         * loaded, null otherwise. Adds debug infos to the bitmap.
+         */
+        private Bitmap getBitmapWithDebugInfo() {
+
+            if (mBitmap == null) {
+                return null;
+            }
+
+            final Bitmap b = Bitmap.createBitmap(mBitmap.getWidth(), mBitmap.getHeight(),
+                    mBitmap.getConfig());
+
+            final Paint paint = new Paint();
+            paint.setAntiAlias(true);
+
+            final Canvas c = new Canvas(b);
+            c.drawBitmap(mBitmap, 0, 0, paint);
+
+            // draw cache state
+            switch (cacheState) {
+                case CACHESTATE_NETWORK:
+                    paint.setColor(Color.RED);
+                    break;
+                case CACHESTATE_DISK_CACH:
+                    paint.setColor(Color.YELLOW);
+                    break;
+                case CACHESTATE_INMEMORY_CACHE:
+                    paint.setColor(Color.GREEN);
+                    break;
+                default:
+                    paint.setColor(Color.TRANSPARENT);
+                    break;
+            }
+            c.drawCircle(10, 10, 10, paint);
+
+            // draw scale state
+            switch (scaleState) {
+                case ImageRequest.SCALESTATE_TO_SMALL:
+                    paint.setColor(Color.RED);
+                    break;
+                case ImageRequest.SCALESTATE_TO_LARGE:
+                    paint.setColor(Color.YELLOW);
+                    break;
+                case ImageRequest.SCALESTATE_JUST_RIGHT:
+                    paint.setColor(Color.GREEN);
+                    break;
+                default:
+                    paint.setColor(Color.TRANSPARENT);
+                    break;
+            }
+            c.drawCircle(30, 10, 10, paint);
+
+            return b;
+        }
+
+        /**
          * Returns the requested URL for this container.
          */
         public String getRequestUrl() {
@@ -366,7 +458,7 @@ public class ImageLoader {
      */
     private class BatchedImageRequest {
         /** The request being tracked */
-        private final Request<?> mRequest;
+        private final ImageRequest mRequest;
 
         /** The result of the request being tracked by this item */
         private Bitmap mResponseBitmap;
@@ -382,7 +474,7 @@ public class ImageLoader {
          * @param request The request being tracked
          * @param container The ImageContainer of the person who initiated the request.
          */
-        public BatchedImageRequest(Request<?> request, ImageContainer container) {
+        public BatchedImageRequest(ImageRequest request, ImageContainer container) {
             mRequest = request;
             mContainers.add(container);
         }
@@ -440,6 +532,8 @@ public class ImageLoader {
                 @Override
                 public void run() {
                     for (BatchedImageRequest bir : mBatchedResponses.values()) {
+                        boolean responseFromCache = bir.mRequest.isResponseFromCache();
+                        int scaleState = bir.mRequest.getScaleState();
                         for (ImageContainer container : bir.mContainers) {
                             // If one of the callers in the batched request canceled the request
                             // after the response was received but before it was delivered,
@@ -448,6 +542,12 @@ public class ImageLoader {
                                 continue;
                             }
                             if (bir.getError() == null) {
+                                if (responseFromCache) {
+                                    container.cacheState = ImageContainer.CACHESTATE_DISK_CACH;
+                                } else {
+                                    container.cacheState = ImageContainer.CACHESTATE_NETWORK;
+                                }
+                                container.scaleState = scaleState;
                                 container.mBitmap = bir.mResponseBitmap;
                                 container.mListener.onResponse(container, false);
                             } else {

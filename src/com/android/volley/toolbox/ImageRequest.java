@@ -16,6 +16,11 @@
 
 package com.android.volley.toolbox;
 
+import android.graphics.Bitmap;
+import android.graphics.Bitmap.Config;
+import android.graphics.BitmapFactory;
+import android.widget.ImageView.ScaleType;
+
 import com.android.volley.DefaultRetryPolicy;
 import com.android.volley.NetworkResponse;
 import com.android.volley.ParseError;
@@ -23,16 +28,28 @@ import com.android.volley.Request;
 import com.android.volley.Response;
 import com.android.volley.VolleyLog;
 
-import android.graphics.Bitmap;
-import android.graphics.Bitmap.Config;
-import android.graphics.BitmapFactory;
-import android.widget.ImageView.ScaleType;
-
 /**
  * A canned request for getting an image at a given URL and calling
  * back with a decoded Bitmap.
  */
 public class ImageRequest extends Request<Bitmap> {
+
+    /**
+     * Image is to small to fit its NVI size. It was not scaled up. Maybe the
+     * NVI did it depending on its layout settings.
+     */
+    public static final int SCALESTATE_TO_SMALL = 1;
+
+    /**
+     * Image was to large for its NVI size and was scaled down.
+     */
+    public static final int SCALESTATE_TO_LARGE = 2;
+
+    /**
+     * Image fits its NVI size.
+     */
+    public static final int SCALESTATE_JUST_RIGHT = 3;
+
     /** Socket timeout in milliseconds for image requests */
     private static final int IMAGE_TIMEOUT_MS = 1000;
 
@@ -47,6 +64,7 @@ public class ImageRequest extends Request<Bitmap> {
     private final int mMaxWidth;
     private final int mMaxHeight;
     private ScaleType mScaleType;
+    private int scaleState;
 
     /** Decoding lock so that we don't decode more than one image at a time (to avoid OOM's) */
     private static final Object sDecodeLock = new Object();
@@ -84,6 +102,24 @@ public class ImageRequest extends Request<Bitmap> {
     @Override
     public Priority getPriority() {
         return Priority.LOW;
+    }
+
+    /**
+     * Returns the scale state of this image response.
+     * <dl>
+     * <dt>{@link #SCALESTATE_TO_SMALL}</dt>
+     * <dd>Image is to small to fit its NVI size. It was not scaled up. Maybe
+     * the NVI did it depending on its layout settings.</dd>
+     * <dt>{@link #SCALESTATE_TO_LARGE}</dt>
+     * <dd>Image was to large for its NVI size and was scaled down.</dd>
+     * <dt>{@link #SCALESTATE_JUST_RIGHT}</dt>
+     * <dd>Image fits its NVI size.</dd>
+     * </dl>
+     * 
+     * @return scale state
+     */
+    public int getScaleState() {
+        return scaleState;
     }
 
     /**
@@ -187,13 +223,21 @@ public class ImageRequest extends Request<Bitmap> {
                 BitmapFactory.decodeByteArray(data, 0, data.length, decodeOptions);
 
             // If necessary, scale down to the maximal acceptable size.
-            if (tempBitmap != null && (tempBitmap.getWidth() > desiredWidth ||
-                    tempBitmap.getHeight() > desiredHeight)) {
-                bitmap = Bitmap.createScaledBitmap(tempBitmap,
-                        desiredWidth, desiredHeight, true);
-                tempBitmap.recycle();
-            } else {
-                bitmap = tempBitmap;
+            if (tempBitmap != null) {
+                if (tempBitmap.getWidth() > desiredWidth ||
+                        tempBitmap.getHeight() > desiredHeight) {
+                    bitmap = Bitmap.createScaledBitmap(tempBitmap,
+                            desiredWidth, desiredHeight, true);
+                    tempBitmap.recycle();
+                    scaleState = SCALESTATE_TO_LARGE;
+                } else {
+                    if (tempBitmap.getWidth() == desiredWidth &&
+                            tempBitmap.getHeight() == desiredHeight) {
+                        scaleState = SCALESTATE_JUST_RIGHT;
+                    }
+                    bitmap = tempBitmap;
+                    scaleState = SCALESTATE_TO_SMALL;
+                }
             }
         }
 
