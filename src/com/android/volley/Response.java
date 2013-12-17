@@ -77,9 +77,6 @@ public class Response<T> {
     /** Detailed error information if <code>errorCode != OK</code>. */
     public final VolleyError error;
 
-    /** True if this response comes from cache. */
-    public boolean cachedResponse;
-
     /** True if this response was a soft-expired one and a second one MAY be coming. */
     public boolean intermediate = false;
 

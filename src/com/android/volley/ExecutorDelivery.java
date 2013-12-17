@@ -96,7 +96,6 @@ public class ExecutorDelivery implements ResponseDelivery {
 
             // Deliver a normal response or error, depending.
             if (mResponse.isSuccess()) {
-                mRequest.setResponseFromCache(mResponse.cachedResponse);
                 mRequest.deliverResponse(mResponse.result);
             } else {
 
