@@ -79,6 +79,9 @@ public abstract class Request<T> implements Comparable<Request<T>> {
     /** Whether or not responses to this request should be cached. */
     private boolean mShouldCache = true;
 
+    /** Whether or not responses comes from cache. */
+    private boolean mResponseFromCache = true;
+
     /** Whether or not this request has been canceled. */
     private boolean mCanceled = false;
 
@@ -429,6 +432,25 @@ public abstract class Request<T> implements Comparable<Request<T>> {
     }
 
     /**
+     * Sets whether or not responses comes from cache.
+     * 
+     * @param responseFromCache True if the response comes from cache.
+     */
+    public void setResponseFromCache(boolean responseFromCache) {
+        mResponseFromCache = responseFromCache;
+    }
+
+    /**
+     * Whether or not responses comes from cache.
+     * 
+     * @returnTrue if the response comes from cache.
+     */
+    public final boolean isResponseFromCache() {
+
+        return mResponseFromCache;
+    }
+
+    /**
      * Priority values.  Requests will be processed from higher priorities to
      * lower priorities, in FIFO order.
      */
@@ -497,19 +519,6 @@ public abstract class Request<T> implements Comparable<Request<T>> {
      */
     protected VolleyError parseNetworkError(VolleyError volleyError) {
         return volleyError;
-    }
-
-    /**
-     * Subclasses can overwrite this to perform delivery of the parsed response
-     * to their listeners. The given response is guaranteed to be non-null;
-     * responses that fail to parse are not delivered.
-     * 
-     * @param response The parsed response returned by
-     *            {@link #parseNetworkResponse(NetworkResponse)}
-     * @param cachedResponse <code>true</code> if this response comes from cache
-     */
-    protected void deliverResponse(T response, boolean cachedResponse) {
-        deliverResponse(response);
     }
 
     /**
