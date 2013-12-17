@@ -21,6 +21,7 @@ import android.graphics.Bitmap;
 import android.graphics.Bitmap.Config;
 import android.test.InstrumentationTestCase;
 import android.test.suitebuilder.annotation.SmallTest;
+import android.widget.ImageView.ScaleType;
 
 import com.android.volley.NetworkResponse;
 import com.android.volley.Response;
@@ -34,34 +35,90 @@ import java.io.InputStream;
 public class ImageRequestTest extends InstrumentationTestCase {
 
     public void testParseNetworkResponse_resizing() throws Exception {
-        byte[] jpegBytes = readRawResource(
-                getInstrumentation().getContext().getResources(), R.raw.large_jpeg_1024_500);
+        byte[] jpegBytes = readRawResource(getInstrumentation().getContext().getResources(),
+                R.raw.large_jpeg_1024_500);
         NetworkResponse jpeg = new NetworkResponse(jpegBytes);
 
+        // Scale the image uniformly (maintain the image's aspect ratio) so that
+        // both dimensions (width and height) of the image will be equal to or
+        // less than the corresponding dimension of the view.
+        ScaleType scalteType = ScaleType.CENTER_INSIDE;
+
         // Exact sizes
-        verifyResize(jpeg, 512, 250, 512, 250); // exactly half
-        verifyResize(jpeg, 511, 249, 509, 249); // just under half
-        verifyResize(jpeg, 1080, 500, 1024, 500); // larger
-        verifyResize(jpeg, 500, 500, 500, 244); // keep same ratio
+        verifyResize(jpeg, 512, 250, scalteType, 512, 250); // exactly half
+        verifyResize(jpeg, 511, 249, scalteType, 509, 249); // just under half
+        verifyResize(jpeg, 1080, 500, scalteType, 1024, 500); // larger
+        verifyResize(jpeg, 500, 500, scalteType, 500, 244); // keep same ratio
 
         // Specify only width, preserve aspect ratio
-        verifyResize(jpeg, 512, 0, 512, 250);
-        verifyResize(jpeg, 800, 0, 800, 390);
-        verifyResize(jpeg, 1024, 0, 1024, 500);
+        verifyResize(jpeg, 512, 0, scalteType, 512, 250);
+        verifyResize(jpeg, 800, 0, scalteType, 800, 390);
+        verifyResize(jpeg, 1024, 0, scalteType, 1024, 500);
 
         // Specify only height, preserve aspect ratio
-        verifyResize(jpeg, 0, 250, 512, 250);
-        verifyResize(jpeg, 0, 391, 800, 391);
-        verifyResize(jpeg, 0, 500, 1024, 500);
+        verifyResize(jpeg, 0, 250, scalteType, 512, 250);
+        verifyResize(jpeg, 0, 391, scalteType, 800, 391);
+        verifyResize(jpeg, 0, 500, scalteType, 1024, 500);
 
         // No resize
-        verifyResize(jpeg, 0, 0, 1024, 500);
+        verifyResize(jpeg, 0, 0, scalteType, 1024, 500);
+
+
+        // Scale the image uniformly (maintain the image's aspect ratio) so that
+        // both dimensions (width and height) of the image will be equal to or
+        // larger than the corresponding dimension of the view.
+        scalteType = ScaleType.CENTER_CROP;
+
+        // Exact sizes
+        verifyResize(jpeg, 512, 250, scalteType, 512, 250);
+        verifyResize(jpeg, 511, 249, scalteType, 511, 249);
+        verifyResize(jpeg, 1080, 500, scalteType, 1024, 500);
+        verifyResize(jpeg, 500, 500, scalteType, 1024, 500);
+
+        // Specify only width
+        verifyResize(jpeg, 512, 0, scalteType, 512, 250);
+        verifyResize(jpeg, 800, 0, scalteType, 800, 390);
+        verifyResize(jpeg, 1024, 0, scalteType, 1024, 500);
+
+        // Specify only height
+        verifyResize(jpeg, 0, 250, scalteType, 512, 250);
+        verifyResize(jpeg, 0, 391, scalteType, 800, 391);
+        verifyResize(jpeg, 0, 500, scalteType, 1024, 500);
+
+        // No resize
+        verifyResize(jpeg, 0, 0, scalteType, 1024, 500);
+
+
+        // Scale in X and Y independently, so that src matches dst exactly. This
+        // may change the aspect ratio of the src.
+        scalteType = ScaleType.FIT_XY;
+
+        // Exact sizes
+        verifyResize(jpeg, 512, 250, scalteType, 512, 250);
+        verifyResize(jpeg, 511, 249, scalteType, 511, 249);
+        verifyResize(jpeg, 1080, 500, scalteType, 1024, 500);
+        verifyResize(jpeg, 500, 500, scalteType, 500, 500);
+
+        // what should happen if width or height is 0?
+
+        // Specify only width
+        verifyResize(jpeg, 512, 0, scalteType, 512, 500);
+        verifyResize(jpeg, 800, 0, scalteType, 800, 500);
+        verifyResize(jpeg, 1024, 0, scalteType, 1024, 500);
+
+        // Specify only height
+        verifyResize(jpeg, 0, 250, scalteType, 1024, 250);
+        verifyResize(jpeg, 0, 391, scalteType, 1024, 391);
+        verifyResize(jpeg, 0, 500, scalteType, 1024, 500);
+
+        // No resize
+        verifyResize(jpeg, 0, 0, scalteType, 1024, 500);
     }
 
     private void verifyResize(NetworkResponse networkResponse, int maxWidth, int maxHeight,
-            int expectedWidth, int expectedHeight) {
-        ImageRequest request = new ImageRequest(
-                "", null, maxWidth, maxHeight, Config.RGB_565, null);
+            ScaleType scaleType, int expectedWidth, int expectedHeight) {
+        ImageRequest request = new ImageRequest("", null, maxWidth, maxHeight, scaleType,
+                Config.RGB_565, null);
         Response<Bitmap> response = request.parseNetworkResponse(networkResponse);
         assertNotNull(response);
         assertTrue(response.isSuccess());
@@ -96,5 +153,4 @@ public class ImageRequestTest extends InstrumentationTestCase {
         in.close();
         return bytes.toByteArray();
     }
-
 }
