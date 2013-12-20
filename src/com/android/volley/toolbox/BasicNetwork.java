@@ -97,8 +97,13 @@ public class BasicNetwork implements Network {
                 responseHeaders = convertHeaders(httpResponse.getAllHeaders());
                 // Handle cache validation.
                 if (statusCode == HttpStatus.SC_NOT_MODIFIED) {
-                    return new NetworkResponse(HttpStatus.SC_NOT_MODIFIED,
+                    if (request.getCacheEntry() != null) {
+                        return new NetworkResponse(HttpStatus.SC_NOT_MODIFIED,
                             request.getCacheEntry().data, responseHeaders, true);
+                    } else {
+                        return new NetworkResponse(HttpStatus.SC_NOT_MODIFIED, new byte[0],
+                            responseHeaders, false);
+                    }
                 }
 
                 // Some responses such as 204s do not have content.  We must check.
