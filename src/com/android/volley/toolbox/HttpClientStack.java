@@ -16,6 +16,8 @@
 
 package com.android.volley.toolbox;
 
+import android.net.http.AndroidHttpClient;
+
 import com.android.volley.AuthFailureError;
 import com.android.volley.Request;
 import com.android.volley.Request.Method;
@@ -33,10 +35,13 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpTrace;
 import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.entity.BasicHttpEntity;
 import org.apache.http.entity.ByteArrayEntity;
+import org.apache.http.message.BasicHeader;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
+import org.apache.http.protocol.HTTP;
 
 import java.io.IOException;
 import java.net.URI;
@@ -51,6 +56,7 @@ public class HttpClientStack implements HttpStack {
     protected final HttpClient mClient;
 
     private final static String HEADER_CONTENT_TYPE = "Content-Type";
+    private final static String GZIP_ENCODING = "gzip";
 
     public HttpClientStack(HttpClient client) {
         mClient = client;
@@ -84,7 +90,51 @@ public class HttpClientStack implements HttpStack {
         // data collection and possibly different for wifi vs. 3G.
         HttpConnectionParams.setConnectionTimeout(httpParams, 5000);
         HttpConnectionParams.setSoTimeout(httpParams, timeoutMs);
-        return mClient.execute(httpRequest);
+        
+        HttpResponse response = mClient.execute(httpRequest);
+        return unGzipResponseIfNeeded(response);
+    }
+    
+    /**
+     * Ungzip response and reset content encoding header
+     * @param response
+     * @return
+     * @throws IOException 
+     */
+    private HttpResponse unGzipResponseIfNeeded(HttpResponse response) throws IOException
+    {
+        if(!isGzipped(response)){
+            return response;
+        }
+        
+        BasicHttpEntity entity = new BasicHttpEntity();
+        entity.setChunked(response.getEntity().isChunked());
+        entity.setContentEncoding("");
+        entity.setContent(AndroidHttpClient.getUngzippedContent(response.getEntity()));
+        entity.setContentLength(response.getEntity().getContentLength());
+        entity.setContentType(response.getEntity().getContentType());
+        response.setEntity(entity);
+        //reset encoding header
+        response.setHeader(new BasicHeader(HTTP.CONTENT_ENCODING, ""));
+        return response;
+    }
+    
+    /**
+     * Check if response is gzipped
+     * @param response
+     * @return
+     */
+    private boolean isGzipped(HttpResponse response)
+    {
+        if(response != null && 
+           response.getEntity() != null && 
+           response.getEntity().getContentEncoding() != null &&
+           response.getEntity().getContentEncoding().getValue() != null &&
+           response.getEntity().getContentEncoding().getValue().contains(GZIP_ENCODING))
+        {
+            return true;
+        }
+        return false;
     }
 
     /**
