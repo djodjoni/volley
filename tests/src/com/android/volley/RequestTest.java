@@ -69,4 +69,26 @@ public class RequestTest extends TestCase {
             return null;
         }
     }
+
+    public void testUrlParsing() {
+        UrlParseRequest nullUrl = new UrlParseRequest(null);
+        UrlParseRequest emptyUrl = new UrlParseRequest("");
+        UrlParseRequest noHost = new UrlParseRequest("http:///");
+        UrlParseRequest badProtocol = new UrlParseRequest("bad:http://foo");
+    }
+
+    private class UrlParseRequest extends Request<Object> {
+        public UrlParseRequest(String url) {
+            super(Request.Method.GET, url, null);
+        }
+
+        @Override
+        protected void deliverResponse(Object response) {
+        }
+
+        @Override
+        protected Response<Object> parseNetworkResponse(NetworkResponse response) {
+            return null;
+        }
+    }
 }
