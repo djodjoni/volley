@@ -134,7 +134,7 @@ public abstract class Request<T> implements Comparable<Request<T>> {
         mErrorListener = listener;
         setRetryPolicy(new DefaultRetryPolicy());
 
-        mDefaultTrafficStatsTag = TextUtils.isEmpty(url) ? 0: Uri.parse(url).getHost().hashCode();
+        mDefaultTrafficStatsTag = findDefaultTrafficStatsTag(url);
     }
 
     /**
@@ -168,6 +168,22 @@ public abstract class Request<T> implements Comparable<Request<T>> {
      */
     public int getTrafficStatsTag() {
         return mDefaultTrafficStatsTag;
+    }
+
+    /**
+     * @return Computes value of @see Request#getDefaultTrafficStatsTag()
+     */
+    protected int findDefaultTrafficStatsTag(String url) {
+      if (url != null && !TextUtils.isEmpty(url)) {
+        Uri uri = Uri.parse(url);
+        if (uri != null) {
+          String host = uri.getHost();
+          if (host != null) {
+            return host.hashCode();
+          }
+        }
+      }
+      return 0;
     }
 
     /**
